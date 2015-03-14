@@ -20,7 +20,9 @@ private:
 public:
     using value_type = typename Container::value_type;
 
-    Yielderator();
+    Yielderator(Container* source)
+        : source_(source)
+    {}
 
     ~Yielderator();
 
@@ -40,6 +42,7 @@ public:
 
 private:
     value_type current_value_;
+    Container* source_;
     Fiber self_ = nullptr;
     Fiber iterator_ = nullptr;
 };
