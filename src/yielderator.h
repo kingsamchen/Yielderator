@@ -18,9 +18,6 @@
 // can be regarded as no-throw.
 template<typename Container>
 class Yielderator {
-private:
-    using Fiber = void*;
-
 public:
     using value_type = typename Container::value_type;
 
@@ -66,10 +63,6 @@ public:
 
         // Are we done with iteration?
         if (!source_) {
-            current_value_->~value_type();
-            operator delete(current_value_);
-            current_value_ = nullptr;
-
             return false;
         }
 
@@ -87,6 +80,45 @@ public:
     }
 
 private:
+    using Fiber = void*;
+
+    class ValueProxy {
+    public:
+        ValueProxy() = default;
+
+        ~ValueProxy()
+        {
+            if (value_) {
+                value_->~value_type();
+                operator delete(value_);
+                value_ = nullptr;
+            }
+        }
+
+        ValueProxy(const ValueProxy&) = delete;
+
+        ValueProxy(ValueProxy&&) = delete;
+
+        ValueProxy& operator=(const ValueProxy&) = delete;
+
+        ValueProxy& operator=(ValueProxy&&) = delete;
+
+        ValueProxy& operator=(const value_type& val)
+        {
+            if (!value_) {
+                value_ = static_cast<value_type*>(operator new(sizeof(value_type)));
+                new (value_) value_type(val);
+            } else {
+                *value_ = val;
+            }
+
+            return *this;
+        }
+
+    private:
+        value_type* value_ = nullptr;
+    };
+
     void SetupFiber()
     {
         // The other Yielderator objects may have made current thread a fiber.
