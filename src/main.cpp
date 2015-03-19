@@ -5,22 +5,21 @@
 #include <conio.h>
 
 #include <iostream>
+#include <string>
 
 #include "yielderator.h"
 
 class Collection {
 public:
-    using value_type = int;
+    using value_type = std::string;
 
     void Yielderate()
     {
-        for (int i = 1; i <= 10; ++i) {
-            if (i > 5) {
-                yield_break;
-            }
-
-            yield_return(i);
-        }
+        yield_return(std::string("abc"));
+        yield_return(std::string("def"));
+        yield_return(std::string("hij"));
+        yield_return(std::string("hello"));
+        yield_return(std::string("world"));
     }
 };
 

@@ -54,8 +54,6 @@ public:
 
         // Do some preparations if we are new to this.
         if (!self_) {
-            current_value_ =
-                static_cast<value_type*>(operator new(sizeof(value_type)));
             SetupFiber();
         }
 
@@ -71,27 +69,26 @@ public:
 
     value_type* Current()
     {
-        return current_value_;
+        return current_value_.value_ptr;
     }
 
     const value_type* Current() const
     {
-        return current_value_;
+        return current_value_.value_ptr;
     }
 
 private:
     using Fiber = void*;
 
-    class ValueProxy {
-    public:
+    struct ValueProxy {
         ValueProxy() = default;
 
         ~ValueProxy()
         {
-            if (value_) {
-                value_->~value_type();
-                operator delete(value_);
-                value_ = nullptr;
+            if (value_ptr) {
+                value_ptr->~value_type();
+                operator delete(value_ptr);
+                value_ptr = nullptr;
             }
         }
 
@@ -105,18 +102,18 @@ private:
 
         ValueProxy& operator=(const value_type& val)
         {
-            if (!value_) {
-                value_ = static_cast<value_type*>(operator new(sizeof(value_type)));
-                new (value_) value_type(val);
+            if (!value_ptr) {
+                value_ptr =
+                    static_cast<value_type*>(operator new(sizeof(value_type)));
+                new (value_ptr) value_type(val);
             } else {
-                *value_ = val;
+                *value_ptr = val;
             }
 
             return *this;
         }
 
-    private:
-        value_type* value_ = nullptr;
+        value_type* value_ptr = nullptr;
     };
 
     void SetupFiber()
@@ -148,7 +145,7 @@ private:
 
 private:
     Container* source_;
-    value_type* current_value_ = nullptr;
+    ValueProxy current_value_;
     Fiber self_ = nullptr;
     Fiber iterator_ = nullptr;
 };
@@ -167,7 +164,7 @@ void yield_return(const ResultType& result)
     };
 
     auto yielderator = static_cast<Yielderator<Dummy>*>(GetFiberData());
-    *yielderator->current_value_ = result;
+    yielderator->current_value_ = result;
 
     SwitchToFiber(yielderator->self_);
 }
