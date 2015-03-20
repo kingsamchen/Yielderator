@@ -13,6 +13,7 @@ class Collection {
 public:
     using value_type = std::string;
 
+private:
     void Yielderate()
     {
         yield_return(std::string("abc"));
@@ -21,6 +22,8 @@ public:
         yield_return(std::string("hello"));
         yield_return(std::string("world"));
     }
+
+    friend Yielderator<Collection>;
 };
 
 int main()
